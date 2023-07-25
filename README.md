@@ -6,7 +6,7 @@ IEasyHydro SDK is a Python library used to simplify access to the iEasyHydro dat
 ## Installation
 
 ```shell
-pip install https://github.com/hydrosolutions/ieasyhydro-python-sdk
+pip install git+https://github.com/hydrosolutions/ieasyhydro-python-sdk
 ```
 
 ## Usage
@@ -27,14 +27,14 @@ We strongly recommend to create a dedicated "machine" user for API usage.
 ### Initialization
 
 ```python
-from ieasyhydro_sdk import IEasyHydroSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK
 
 # initialize SDK (configuration will be read from environment variables)
 ieasyhydro_sdk = IEasyHydroSDK()
 ```
 
 ```python
-from ieasyhydro_sdk import IEasyHydroSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK
 
 # initialize and configure SDK by providing configuration on class creation
 ieh_sdk = IEasyHydroSDK(
