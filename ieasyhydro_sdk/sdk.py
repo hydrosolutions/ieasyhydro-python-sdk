@@ -31,15 +31,44 @@ variable_variable_code_map = {
 
 class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
 
+    def map_site_data(self, all_resources):
+        response_data = []
+        for resource in all_resources:
+            response_data.append({
+                'id': resource['id'],
+                'site_code': resource['siteCode'],
+                'basin': resource['basin'],
+                'latitude': resource['latitude'],
+                'longitude': resource['longitude'],
+                'country': resource['country'],
+                'is_virtual': resource['isVirtual'],
+                'region': resource['region'],
+                'site_type': resource['siteType'],
+                'site_name': resource['siteName'],
+                'organization_id': resource['sourceId'],
+                'elevation': resource['elevationM'],
+            })
+
+        return response_data
+
     def get_discharge_sites(self):
-        return self._call_get_discharge_sites().json()['resources']
+        all_resources = self._call_get_discharge_sites().json()['resources']
+        return self.map_site_data(all_resources)
 
     def get_meteo_sites(self):
-        return self._call_get_meteo_sites().json()['resources']
+        all_resources = self._call_get_meteo_sites().json()['resources']
+        return self.map_site_data(all_resources)
 
     def get_norm_for_site(self, site_code, data_type):
         response = self._call_get_norm_for_site(site_code, data_type)
-        return response.json()['resources']
+        resources = response.json()['resources']
+        print(resources)
+        return {
+            'norm_data': resources[0]['normData'],
+            'start_year': resources[0]['startYear'],
+            'end_year': resources[0]['endYear'],
+            'site_id': resources[0]['siteId'],
+        }
 
     def get_data_values_for_site(
             self,

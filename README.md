@@ -37,7 +37,7 @@ ieasyhydro_sdk = IEasyHydroSDK()
 from ieasyhydro_sdk.sdk import IEasyHydroSDK
 
 # initialize and configure SDK by providing configuration on class creation
-ieh_sdk = IEasyHydroSDK(
+ieasyhydro_sdk = IEasyHydroSDK(
     host='https://api.ieasyhydro.org',
     username='username',
     password='password',
@@ -74,53 +74,33 @@ Both methods are returning dictionary with the following structure:
 ```python
 [
   {
-    'elevationM': 0.0,
-    'sourceId': 1,
-    'verticalDatumId': None,
+    'elevation': 0.0,
+    'organization_id': 1,
     'longitude': 0.0,
-    'catchmentAreaId': 152,
-    'posAccuracyM': None,
-    'siteName': 'р.Беш-Таш-гол.ар.саз',
-    'siteType': 'discharge',
-    'region': 'ТАЛАССКАЯ ОБЛАСТЬ',
-    'virtualStations': [
-    ],
-    'comments': None,
-    'localProjectionId': None,
-    'isVirtual': False,
-    'localY': None,
-    'localX': None,
-    'country': 'Кыргызстан',
+    'site_name': 'Site name 1',
+    'site_type': 'discharge',
+    'region': 'Region 1',
+    'is_virtual': False,
+    'country': 'Kyrgyzstan',
     'latitude': 0.0,
-    'basin': 'Талас',
-    'latLongDatumId': 3,
+    'basin': 'Basin 1',
     'id': 23,
-    'siteCode': '15283'
+    'site_code': '10000'
   },
   {
-    'elevationM': 0.0,
-    'sourceId': 1,
-    'verticalDatumId': None,
+    'elevation': 0.0,
+    'organization_id': 1,
     'longitude': 0.0,
-    'catchmentAreaId': 153,
-    'posAccuracyM': None,
-    'siteName': 'Ур-Марал-с.Октябрьское',
-    'siteType': 'discharge',
-    'region': 'ТАЛАССКАЯ ОБЛАСТЬ',
-    'virtualStations': [
-    ],
-    'comments': None,
-    'localProjectionId': None,
-    'isVirtual': False,
-    'localY': None,
-    'localX': None,
-    'country': 'Кыргызстан',
+    'site_name': 'Site name 2',
+    'site_type': 'discharge',
+    'region': 'Region 2',
+    'is_virtual': False,
+    'country': 'Kyrgyzstan',
     'latitude': 0.0,
-    'basin': 'Талас',
-    'latLongDatumId': 3,
-    'id': 30,
-    'siteCode': '15285'
-  }
+    'basin': 'Basin 2',
+    'id': 53,
+    'site_code': '11000'
+  },
 ]
 ```
 
@@ -163,9 +143,8 @@ norm_data = ieasyhydro_sdk.get_norm_for_site(
 The method is returning dictionary with the following structure:
 
 ```python
-[
-  {
-    'normData': [
+{
+    'norm_data': [
       2.02,
       1.88,
       1.69,
@@ -203,12 +182,10 @@ The method is returning dictionary with the following structure:
       2.35,
       2.02
     ],
-    'endYear': 2020,
-    'siteId': 10,
-    'normUrl': '',
-    'startYear': 2013
-  }
-]
+    'end_year': 2020,
+    'site_id': 10,
+    'start_year': 2013
+}
 
 ```
 
