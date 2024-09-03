@@ -58,6 +58,9 @@ class IEasyHydroSDKBase:
         if not self.bearer_token:
             self._login()
 
+        if relative_url is None:
+            raise ValueError('No path provided or the provided path is None')
+
         headers = headers or {}
         headers.update({'Authorization': f'Bearer {self.bearer_token}'})
 
@@ -70,7 +73,6 @@ class IEasyHydroSDKBase:
 
         if self.organization_id:
             headers.update({'organization': str(self.organization_id)})
-
         response = requests.request(
             method=method,
             url=urljoin(self.host, relative_url),
@@ -123,3 +125,36 @@ class IEasyHydroSDKBase:
             data += response.json()[resources_key]
 
         return data
+
+
+class IEasyHydroHFSDKBase(IEasyHydroSDKBase):
+    def __init__(self, host=None, username=None, password=None, organization_id=None):
+        self.host = host or os.environ.get('IEASYHYDROHF_HOST', 'https://hf.ieasyhydro.org/api/v1/')
+        self.username = username or os.environ.get('IEASYHYDROHF_USERNAME')
+        self.password = password or os.environ.get('IEASYHYDROHF_PASSWORD')
+        self.organization_id = organization_id or os.environ.get('ORGANIZATION_ID')
+        self.organization_uuid = None
+        self.bearer_token = None
+
+        for name, env_name in (
+                ('host', 'IEASYHYDROHF_HOST'),
+                ('username', 'IEASYHYDROHF_USERNAME'),
+                ('password', 'IEASYHYDROHF_PASSWORD'),
+        ):
+            if getattr(self, name) is None:
+                raise ValueError(
+                    f'The {name} is not set. Either provide "{name}" parameter in class '
+                    f'initialization or set the "{env_name}" environment variable.')
+
+    def _login(self):
+        response = requests.post(
+            url=urljoin(self.host, 'auth/token-obtain'),
+            json={'username': self.username, 'password': self.password}
+        )
+        if response.status_code == 200:
+            response_json = response.json()
+            self.bearer_token = response_json["access"]
+            self.organization_uuid = response_json["user"]["organization"]["uuid"]
+        else:
+            raise ValueError('Configured username and password are not valid.')
+

@@ -1,7 +1,7 @@
 
 from datetime import datetime
 
-from ieasyhydro_sdk.sdk_endpoint_definitions import IEasyHydroSDKEndpointsBase
+from ieasyhydro_sdk.sdk_endpoint_definitions import IEasyHydroSDKEndpointsBase, IEasyHydroHFSDKEndpointsBase
 from ieasyhydro_sdk.filters import GetDataValueFilters
 
 
@@ -52,6 +52,7 @@ class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
         return response_data
 
     def get_discharge_sites(self):
+        print(self._call_get_discharge_sites())
         all_resources = self._call_get_discharge_sites().json()['resources']
         return self.map_site_data(all_resources)
 
@@ -62,7 +63,6 @@ class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
     def get_norm_for_site(self, site_code, data_type):
         response = self._call_get_norm_for_site(site_code, data_type)
         resources = response.json()['resources']
-        print(resources)
         return {
             'norm_data': resources[0]['normData'],
             'start_year': resources[0]['startYear'],
@@ -123,3 +123,54 @@ class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
         return_data['data_values'] = values_prepared
 
         return return_data
+
+
+class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
+    @staticmethod
+    def map_site_data(all_resources):
+        response_data = []
+        for resource in all_resources:
+            resource_site = resource['site'] if 'site' in resource else None
+
+            response_data.append({
+                'id': resource['id'],
+                'site_code': resource['station_code'],
+                'site_type': resource.get('station_type'),
+                'basin': {
+                    'official_name': resource_site['basin']['name']
+                    if resource_site else resource['basin']['name'],
+                    'national_name': resource_site['basin']['secondary_name']
+                    if resource_site else resource['basin']['secondary_name']
+                },
+                'region': {
+                    'official_name': resource_site['region']['name']
+                    if resource_site else resource['region']['name'],
+                    'national_name': resource_site['region']['secondary_name']
+                    if resource_site else resource['region']['secondary_name']
+                },
+                'official_name': resource['name'],
+                'national_name': resource['secondary_name'],
+                'country': resource_site['country'] if resource_site else resource['country'],
+                'latitude': resource_site['latitude'] if resource_site else resource['latitude'],
+                'longitude': resource_site['longitude'] if resource_site else resource['longitude'],
+                'elevation': resource_site['country'] if resource_site else resource['country'],
+                'bulletin_order': resource.get('bulletin_order'),
+                'dangerous_discharge': resource.get('discharge_level_alarm'),
+                'historical_discharge_minimum': resource.get('historical_discharge_minimum'),
+                'historical_discharge_maximum': resource.get('historical_discharge_maximum')
+            })
+
+        return response_data
+
+    def get_discharge_sites(self):
+        print(self._call_get_discharge_sites())
+        sites = self._call_get_discharge_sites().json()
+        return self.map_site_data(sites)
+
+    def get_meteo_sites(self):
+        sites = self._call_get_meteo_sites().json()
+        return self.map_site_data(sites)
+
+    def get_virtual_sites(self):
+        sites = self._call_get_virtual_sites().json()
+        return self.map_site_data(sites)

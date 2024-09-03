@@ -109,7 +109,7 @@ Both methods are returning dictionary with the following structure:
 The iEasyHydro has an API endpoint for fetching the norm for the next data types:
 
  - `discharge`
- - `temeperature`
+ - `temperature`
  - `precitipation`
 
 It's important to understand that iEasyHydro is calculating norm with the "cutoff" logic - 
