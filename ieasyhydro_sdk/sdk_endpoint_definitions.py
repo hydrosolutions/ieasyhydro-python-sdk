@@ -90,11 +90,11 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         else:
             return None
 
-    def _get_norm_for_site(
+    def _call_get_norm_for_site(
             self,
             site_code,
             site_type,
-            norm_type
+            params
     ):
         def _get_path():
             site_uuid = self._get_site_uuid_for_site_code(site_code, site_type)
@@ -108,9 +108,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
 
         method = 'get'
         path = _get_path()
-        params = {
-            'norm_type': norm_type
-        }
+        params = params
         return self._call_api(
             method,
             path,
@@ -118,29 +116,33 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             paginated_endpoint=False,
         )
 
-    def _call_get_discharge_norm_for_site(self, site_code, norm_type):
-        return self._get_norm_for_site(site_code, 'hydro', norm_type)
+    def _call_get_discharge_norm_for_site(self, site_code, norm_type="d"):
+        return self._call_get_norm_for_site(
+            site_code, 'hydro', {"norm_type": norm_type}
+        )
 
-    def _call_get_meteo_norm_for_site(self, site_code, norm_type):
-        return self._get_norm_for_site(site_code, 'meteo', norm_type)
+    def _call_get_meteo_norm_for_site(self, site_code, norm_type="d", norm_metric="p"):
+        return self._call_get_norm_for_site(
+            site_code, 'meteo', {"norm_type": norm_type, "norm_metric": norm_metric}
+        )
 
     def _call_get_discharge_sites(self, paginate=False, params=None):
         method = 'get'
-        path = f'{self.organization_uuid}/hydrological'
-        return self._call_gapi(
+        path = f'stations/{self.organization_uuid}/hydrological'
+        return self._call_api(
             method, path, paginated_endpoint=paginate, params=params
         )
 
     def _call_get_meteo_sites(self, paginate=False, params=None):
         method = 'get'
-        path = f'{self.organization_uuid}/meteo'
+        path = f'stations/{self.organization_uuid}/meteo'
         return self._call_api(
             method, path, paginated_endpoint=paginate, params=params
         )
 
     def _call_get_virtual_sites(self, paginate=False, params=None):
         method = 'get'
-        path = f'{self.organization_uuid}/virtual'
+        path = f'stations/{self.organization_uuid}/virtual'
         return self._call_api(
             method, path, paginated_endpoint=paginate, params=params
         )

@@ -146,6 +146,8 @@ class IEasyHydroHFSDKBase(IEasyHydroSDKBase):
                     f'The {name} is not set. Either provide "{name}" parameter in class '
                     f'initialization or set the "{env_name}" environment variable.')
 
+        self._login()
+
     def _login(self):
         response = requests.post(
             url=urljoin(self.host, 'auth/token-obtain'),
