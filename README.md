@@ -37,8 +37,7 @@ We strongly recommend to create a dedicated "machine" user for API usage.
 ### Initialization
 
 ```python
-from ieasyhydro_sdk.sdk import IEasyHydroSDK
-from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK, IEasyHydroHFSDK
 
 # initialize SDK (configuration will be read from environment variables)
 ieasyhydro_sdk = IEasyHydroSDK()
@@ -46,8 +45,7 @@ ieasyhydro_sdk_hf = IEasyHydroHFSDK()
 ```
 
 ```python
-from ieasyhydro_sdk.sdk import IEasyHydroSDK
-from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK, IEasyHydroHFSDK
 
 # initialize and configure SDK by providing configuration on class creation
 ieasyhydro_sdk = IEasyHydroSDK(
