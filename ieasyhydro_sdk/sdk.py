@@ -1,7 +1,7 @@
 
 from datetime import datetime
 
-from ieasyhydro_sdk.sdk_endpoint_definitions import IEasyHydroSDKEndpointsBase
+from ieasyhydro_sdk.sdk_endpoint_definitions import IEasyHydroSDKEndpointsBase, IEasyHydroHFSDKEndpointsBase
 from ieasyhydro_sdk.filters import GetDataValueFilters
 
 
@@ -62,7 +62,6 @@ class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
     def get_norm_for_site(self, site_code, data_type):
         response = self._call_get_norm_for_site(site_code, data_type)
         resources = response.json()['resources']
-        print(resources)
         return {
             'norm_data': resources[0]['normData'],
             'start_year': resources[0]['startYear'],
@@ -123,3 +122,108 @@ class IEasyHydroSDK(IEasyHydroSDKEndpointsBase):
         return_data['data_values'] = values_prepared
 
         return return_data
+
+
+class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
+    @staticmethod
+    def _resolve_station_type(station_type):
+        match station_type:
+            case 'M':
+                return 'manual'
+            case 'A':
+                return 'automatic'
+            case 'V':
+                return 'virtual'
+            case None:
+                return 'meteo'
+            case _:
+                return None
+
+    @staticmethod
+    def _resolve_forecast_status(station):
+        if station.get("station_type") in ['A', 'M']:
+            return {
+                'daily_forecast': station['daily_forecast'],
+                'pentad_forecast': station['pentad_forecast'],
+                'decadal_forecast': station['decadal_forecast'],
+                'monthly_forecast': station['monthly_forecast'],
+                'seasonal_forecast': station['seasonal_forecast'],
+            }
+
+        return None
+
+    def map_site_data(self, all_resources):
+        response_data = []
+        for resource in all_resources:
+            resource_site = resource['site'] if 'site' in resource else None
+            site_type = self._resolve_station_type(resource.get('station_type'))
+
+            response_data.append({
+                'id': resource['id'],
+                'site_code': resource['station_code'],
+                'site_type': site_type,
+                'basin': {
+                    'official_name': resource_site['basin']['name']
+                    if resource_site else resource['basin']['name'],
+                    'national_name': resource_site['basin']['secondary_name']
+                    if resource_site else resource['basin']['secondary_name']
+                },
+                'region': {
+                    'official_name': resource_site['region']['name']
+                    if resource_site else resource['region']['name'],
+                    'national_name': resource_site['region']['secondary_name']
+                    if resource_site else resource['region']['secondary_name']
+                },
+                'official_name': resource['name'],
+                'national_name': resource['secondary_name'],
+                'country': resource_site['country'] if resource_site else resource['country'],
+                'latitude': resource_site['latitude'] if resource_site else resource['latitude'],
+                'longitude': resource_site['longitude'] if resource_site else resource['longitude'],
+                'elevation': resource_site['elevation'] if resource_site else resource['elevation'],
+                'bulletin_order': resource.get('bulletin_order'),
+                'dangerous_discharge': resource.get('discharge_level_alarm'),
+                'historical_discharge_minimum': resource.get('historical_discharge_minimum'),
+                'historical_discharge_maximum': resource.get('historical_discharge_maximum'),
+                'enabled_forecasts': self._resolve_forecast_status(resource)
+            })
+
+        return response_data
+
+    def get_discharge_sites(self):
+        sites_response = self._call_get_discharge_sites()
+        if sites_response.status_code == 200:
+            return self.map_site_data(sites_response.json())
+        else:
+            raise ValueError(f"Could not retrieve discharge sites, got status code {sites_response.status_code}")
+
+    def get_meteo_sites(self):
+        sites_response = self._call_get_meteo_sites()
+        if sites_response.status_code == 200:
+            return self.map_site_data(sites_response.json())
+        else:
+            raise ValueError(f"Could not retrieve meteo sites, got status code {sites_response.status_code}")
+
+    def get_virtual_sites(self):
+        sites_response = self._call_get_virtual_sites()
+        if sites_response.status_code == 200:
+            return self.map_site_data(sites_response.json())
+        else:
+            raise ValueError(f"Could not retrieve virtual sites, got status code {sites_response.status_code}")
+
+    def get_norm_for_site(self, site_code, norm_type, norm_period="d"):
+        match norm_type:
+            case 'discharge':
+                norm_response = self._call_get_discharge_norm_for_site(site_code, norm_period)
+            case 'precipitation':
+                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 'p')
+            case 'temperature':
+                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 't')
+            case _:
+                raise ValueError(f"Can only retrieve discharge, precipitation or temperature norms, got {norm_type}")
+
+        if norm_response.status_code == 200:
+            return [float(entry["value"]) for entry in norm_response.json()]
+        else:
+            raise ValueError(
+                f"Could not retrieve {norm_type} norm for site {site_code}, got status code {norm_response.status_code}"
+            )

@@ -2,6 +2,9 @@
 # IEasyHydroSDK
 
 IEasyHydro SDK is a Python library used to simplify access to the iEasyHydro data.
+It supports both iEasyHydro and iEasyHydroHF. At the moment, support for iEasyHydroHF
+is limited to "static" data, but more functionalities will be added once the application becomes
+fully operational.
 
 ## Installation
 
@@ -18,8 +21,15 @@ To use IEasyHydroSDK you need to configure next environment variables:
 ```dotenv
 IEASYHYDRO_HOST=https://api.ieasyhydro.org
 IEASYHYDRO_USERNAME=username
-IEASYHYDRO_PASSWORD=passwoord
-ORGANIZATION_ID=1 # only fill if user is superadmin
+IEASYHYDRO_PASSWORD=password
+ORGANIZATION_ID=1  # only fill if user is superadmin
+```
+
+For SDK for iEasyHydroHF, similar environment variables are required:
+```dotenv
+IEASYHYDROHF_HOST=https://api.ieasyhydro.org
+IEASYHYDROHF_USERNAME=username
+IEASYHYDROHF_PASSWORD=password
 ```
 
 We strongly recommend to create a dedicated "machine" user for API usage.
@@ -27,14 +37,15 @@ We strongly recommend to create a dedicated "machine" user for API usage.
 ### Initialization
 
 ```python
-from ieasyhydro_sdk.sdk import IEasyHydroSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK, IEasyHydroHFSDK
 
 # initialize SDK (configuration will be read from environment variables)
 ieasyhydro_sdk = IEasyHydroSDK()
+ieasyhydro_sdk_hf = IEasyHydroHFSDK()
 ```
 
 ```python
-from ieasyhydro_sdk.sdk import IEasyHydroSDK
+from ieasyhydro_sdk.sdk import IEasyHydroSDK, IEasyHydroHFSDK
 
 # initialize and configure SDK by providing configuration on class creation
 ieasyhydro_sdk = IEasyHydroSDK(
@@ -42,6 +53,11 @@ ieasyhydro_sdk = IEasyHydroSDK(
     username='username',
     password='password',
     organization_id=1,
+)
+ieasyhydro_hf_sdk = IEasyHydroHFSDK(
+    host='https://hf.ieasyhydro.org/api/v1/',
+    username='username',
+    password='password',
 )
 ```
 
@@ -59,6 +75,29 @@ ieasyhydro_sdk = IEasyHydroSDK()
 discharge_sites_data = ieasyhydro_sdk.get_discharge_sites()
 ```
 
+For the HF SDK, it's exactly the same:
+
+```python
+from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+
+ieasyhydro_hf_sdk = IEasyHydroHFSDK()
+
+discharge_sites_data = ieasyhydro_hf_sdk.get_discharge_sites()
+```
+
+The difference with the discharge stations is that due to different structure
+of the database in iEasyHydroHF, the virtual stations are separated from the discharge ones.
+If you need to retrieve the virtual stations, you can do it as follows:
+
+```python
+from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+
+ieasyhydro_hf_sdk = IEasyHydroHFSDK()
+
+virtual_sites_data = ieasyhydro_hf_sdk.get_virtual_sites()
+```
+
+
 Example 2: Fetch meteo sites data
 
 ```python
@@ -69,7 +108,9 @@ ieasyhydro_sdk = IEasyHydroSDK()
 meteo_sites_data = ieasyhydro_sdk.get_meteo_sites()
 ```
 
-Both methods are returning dictionary with the following structure:
+The HF client works exactly the same.
+
+Both methods are returning dictionary with the following structure (for the iEasyHydro SDK):
 
 ```python
 [
@@ -104,12 +145,82 @@ Both methods are returning dictionary with the following structure:
 ]
 ```
 
+Again, since iEasyHydro HF works differently "under the hood", there are some differences in the output
+the SDK will return.
+
+```python
+[
+    {
+        'basin': {
+            'national_name': '',
+            'official_name': 'Иссык-Куль'
+        },
+        'bulletin_order': 0,
+        'country': 'Кыргызстан',
+        'dangerous_discharge': 100.0,
+        'elevation': 0.0,
+        'enabled_forecasts': {
+            'daily_forecast': False,
+            'decadal_forecast': False,
+            'monthly_forecast': False,
+            'pentad_forecast': False,
+            'seasonal_forecast': False
+        },
+        'historical_discharge_maximum': None,
+        'historical_discharge_minimum': None,
+        'id': 96,
+        'latitude': 42.8746,
+        'longitude': 74.5698,
+        'national_name': '',
+        'official_name': 'Ак-Сай - с.Көк-Сай',
+        'region': {
+            'national_name': '',
+            'official_name': 'ИССЫК-КУЛЬСКАЯ ОБЛАСТЬ'
+        },
+        'site_code': '15054',
+        'site_type': 'manual'
+    },
+    {
+        'basin': {
+            'national_name': '',
+            'official_name': 'Сыр-Дарья'
+        },
+        'bulletin_order': 0,
+        'country': 'Кыргызстан',
+        'dangerous_discharge': 50.2,
+        'elevation': 0.0,
+        'enabled_forecasts': {
+            'daily_forecast': False,
+            'decadal_forecast': False,
+            'monthly_forecast': False,
+            'pentad_forecast': False,
+            'seasonal_forecast': False
+        },
+        'historical_discharge_maximum': None,
+        'historical_discharge_minimum': None,
+        'id': 97,
+        'latitude': 40.214,
+        'longitude': 72.529,
+        'national_name': '',
+        'official_name': 'Араван-Сай-к.Жаны-Ноокат',
+        'region': {
+            'national_name': '',
+            'official_name': 'БАТКЕНСКАЯ ОБЛАСТЬ'
+        },
+        'site_code': '16158',
+        'site_type': 'manual'
+    }
+]
+
+```
+You will get similar response for meteo and virtual stations with the exception that the `enabled_forecasts` will be `None`.
+
 ### Norm
 
 The iEasyHydro has an API endpoint for fetching the norm for the next data types:
 
  - `discharge`
- - `temeperature`
+ - `temperature`
  - `precitipation`
 
 It's important to understand that iEasyHydro is calculating norm with the "cutoff" logic - 
@@ -189,11 +300,72 @@ The method is returning dictionary with the following structure:
 
 ```
 
+As norms also work differently in iEasyHydroHF, the output you get when requesting norms from its SDK is slightly different.
+iEasyHydroHF only works with the current norm values, instead of calculating it from norm data for all the previous years
+which also means the "cutoff" logic described above isn't relevant here.
+The interface for retrieving the norm however is the same:
+
+```python
+from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+
+ieasyhydro_hf_sdk = IEasyHydroHFSDK()
+
+norm_data = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
+
+```
+The data you would get in the `norm_data` variable would be:
+
+```python
+[
+    1.76306,
+    1.69184,
+    1.64643,
+    1.61071,
+    1.57296,
+    1.5401,
+    1.5451,
+    1.54677,
+    1.53255,
+    1.53218,
+    1.60733,
+    1.7696,
+    2.27225,
+    3.08059,
+    4.1617,
+    6.32663,
+    8.14099,
+    10.01703,
+    11.67733,
+    13.4458,
+    14.639,
+    15.05198,
+    13.84901,
+    11.10554,
+    8.11796,
+    5.90596,
+    4.43908,
+    3.43042,
+    2.89649,
+    2.53247,
+    2.32948,
+    2.1932,
+    2.08865,
+    2.00885,
+    1.92897,
+    1.85072
+]
+
+```
+
 ### Data Values
 
 We can fetch data for all data types stored in iEasyHydro database by using the `get_data_values_for_site()` method. 
 We just need to specify `site_code` and `variable_type` we want to fetch, and function will automatically fetch all
 data values from the API. It will take care to perform requests in chunks in order to avoid overloading of the server.
+
+**IMPORTANT
+At this time, iEasyHydro HF still doesn't provide the interface for retrieving the data values. As soon as it is in
+operational use, the library will be updated to provide support for this as well.**
 
 Examples 1: Fetch all daily discharge values
 
