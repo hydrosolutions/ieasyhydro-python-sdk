@@ -213,7 +213,7 @@ the SDK will return.
 ]
 
 ```
-You will get similar response for meteo and virtual stations with the exception that the `enabled_forecasts` will be `None`.
+You will get similar response for meteo stations with the exception that the `enabled_forecasts` will be `None`.
 
 ### Norm
 

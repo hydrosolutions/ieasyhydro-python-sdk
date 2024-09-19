@@ -141,7 +141,7 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
 
     @staticmethod
     def _resolve_forecast_status(station):
-        if station.get("station_type") in ['A', 'M']:
+        if station.get("station_type") in ['A', 'M', 'V']:
             return {
                 'daily_forecast': station['daily_forecast'],
                 'pentad_forecast': station['pentad_forecast'],
