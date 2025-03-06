@@ -1,4 +1,3 @@
-
 # IEasyHydroSDK
 
 IEasyHydro SDK is a Python library used to simplify access to the iEasyHydro data.
@@ -26,6 +25,7 @@ ORGANIZATION_ID=1  # only fill if user is superadmin
 ```
 
 For SDK for iEasyHydroHF, similar environment variables are required:
+
 ```dotenv
 IEASYHYDROHF_HOST=https://api.ieasyhydro.org
 IEASYHYDROHF_USERNAME=username
@@ -96,7 +96,6 @@ ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
 virtual_sites_data = ieasyhydro_hf_sdk.get_virtual_sites()
 ```
-
 
 Example 2: Fetch meteo sites data
 
@@ -213,21 +212,22 @@ the SDK will return.
 ]
 
 ```
+
 You will get similar response for meteo stations with the exception that the `enabled_forecasts` will be `None`.
 
 ### Norm
 
 The iEasyHydro has an API endpoint for fetching the norm for the next data types:
 
- - `discharge`
- - `temperature`
- - `precitipation`
+- `discharge`
+- `temperature`
+- `precitipation`
 
-It's important to understand that iEasyHydro is calculating norm with the "cutoff" logic - 
-this logic is the legacy from the times when it was calculated manually on the paper. 
-This was used to avoid frequent manual recalculation of the norm, but to do a recalculation 
+It's important to understand that iEasyHydro is calculating norm with the "cutoff" logic -
+this logic is the legacy from the times when it was calculated manually on the paper.
+This was used to avoid frequent manual recalculation of the norm, but to do a recalculation
 every 5 years. The logic is just not considering the latest data in norm calculation, and
-the cutoff year is calculated by the next python code (the `lowest_year` is the year of the 
+the cutoff year is calculated by the next python code (the `lowest_year` is the year of the
 first data in the system):
 
 ```python
@@ -247,7 +247,7 @@ from ieasyhydro_sdk.sdk import IEasyHydroSDK
 ieasyhydro_sdk = IEasyHydroSDK()
 
 norm_data = ieasyhydro_sdk.get_norm_for_site(
-    site_code='15212', 
+    site_code='15212',
     data_type='discharge')
 ```
 
@@ -303,17 +303,37 @@ The method is returning dictionary with the following structure:
 As norms also work differently in iEasyHydroHF, the output you get when requesting norms from its SDK is slightly different.
 iEasyHydroHF only works with the current norm values, instead of calculating it from norm data for all the previous years
 which also means the "cutoff" logic described above isn't relevant here.
-The interface for retrieving the norm however is the same:
+
+The iEasyHydroHF SDK supports three different norm periods:
+
+- `d` - decadal (default)
+- `m` - monthly
+- `p` - pentadal (5-day periods)
+
+Example for retrieving norms with iEasyHydroHF:
 
 ```python
 from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
 
 ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
-norm_data = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
+# Get decadal norm (default)
+decadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
 
+# Get monthly norm
+monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
+
+# Get pentadal norm
+pentadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="p")
 ```
-The data you would get in the `norm_data` variable would be:
+
+The data returned is a list of float values representing the norm for each period. The length of the list depends on the norm_period:
+
+- Decadal: 36 values (3 values per month)
+- Monthly: 12 values (1 value per month)
+- Pentadal: 72 values (6 values per month)
+
+Example decadal norm data:
 
 ```python
 [
@@ -359,7 +379,7 @@ The data you would get in the `norm_data` variable would be:
 
 ### Data Values
 
-We can fetch data for all data types stored in iEasyHydro database by using the `get_data_values_for_site()` method. 
+We can fetch data for all data types stored in iEasyHydro database by using the `get_data_values_for_site()` method.
 We just need to specify `site_code` and `variable_type` we want to fetch, and function will automatically fetch all
 data values from the API. It will take care to perform requests in chunks in order to avoid overloading of the server.
 
@@ -402,7 +422,7 @@ filters = BasicDataValueFilters(
 )
 
 response_data = ieasyhydro_sdk.get_data_values_for_site(
-    '15212', 
+    '15212',
     'discharge_historical_decade_average',
     filters=filters
 )
@@ -411,55 +431,51 @@ response_data = ieasyhydro_sdk.get_data_values_for_site(
 You can find all variable types listed here:
 
 | Variable type                       | Description |
-|-------------------------------------|-------------|
-| water_level_daily                   | |
-| water_level_daily_average           | |
-| water_level_daily_estimation        | |
-| discharge_measurement               | |
-| discharge_daily                     | |
-| free_river_area                     | |
-| maximum_depth                       | |
-| decade_discharge                    | |
-| dangerous_discharge                 | |
-| discharge_daily_average             | |
-| ice_phenomena                       | |
-| water_level_measurement             | |
-| water_temperature                   | |
-| air_temperature                     | |
-| fiveday_discharge                   | |
-| decade_temperature                  | |
-| monthly_temperature                 | |
-| decade_precipitation                | |
-| monthly_precipitation               | |
-| discharge_historical_decade_average | |
-
+| ----------------------------------- | ----------- |
+| water_level_daily                   |             |
+| water_level_daily_average           |             |
+| water_level_daily_estimation        |             |
+| discharge_measurement               |             |
+| discharge_daily                     |             |
+| free_river_area                     |             |
+| maximum_depth                       |             |
+| decade_discharge                    |             |
+| dangerous_discharge                 |             |
+| discharge_daily_average             |             |
+| ice_phenomena                       |             |
+| water_level_measurement             |             |
+| water_temperature                   |             |
+| air_temperature                     |             |
+| fiveday_discharge                   |             |
+| decade_temperature                  |             |
+| monthly_temperature                 |             |
+| decade_precipitation                |             |
+| monthly_precipitation               |             |
+| discharge_historical_decade_average |             |
 
 Available filters are described here:
 
-| Parameter | Type | Description                                                           |
-|-----------|------|-----------------------------------------------------------------------|
-| `data_value` | `float`, optional | Only include data with specified data value                            |
-| `data_value__ne` | `float`, optional | Excludes the specified data value                                     |
-| `data_value__gt` | `float`, optional | Data values greater than the specified value                          |
-| `data_value__gte` | `float`, optional | Data values greater than or equal to the specified value              |
-| `data_value__lt` | `float`, optional | Data values less than the specified value                             |
-| `data_value__lte` | `float`, optional | Data values less than or equal to the specified value                 |
-| `data_value__isnull` | `bool`, optional | Whether the data value is null                                        |
-| `data_value__is_no_data_value` | `bool`, optional | Whether the data value is not a data value                            |
-| `local_date_time` | `datetime`, optional | Specific local date and time to filter the results                    |
-| `local_date_time__gt` | `datetime`, optional | Local date and time greater than the specified value                  |
-| `local_date_time__gte` | `datetime`, optional | Local date and time greater than or equal to the specified value      |
-| `local_date_time__lt` | `datetime`, optional | Local date and time less than the specified value                     |
-| `local_date_time__lte` | `datetime`, optional | Local date and time less than or equal to the specified value         |
-| `utc_date_time` | `datetime`, optional | Specific UTC date and time to filter the results                      |
-| `utc_date_time__gt` | `datetime`, optional | UTC date and time greater than the specified value                    |
-| `utc_date_time__gte` | `datetime`, optional | UTC date and time greater than or equal to the specified value        |
-| `utc_date_time__lt` | `datetime`, optional | UTC date and time less than the specified value                       |
-| `utc_date_time__lte` | `datetime`, optional | UTC date and time less than or equal to the specified value           |
-| `order_by` | `str`, optional | Name of the column we want to order data. Suported ordering `local_date_time` and `-local_date_time` |
-
-
-
+| Parameter                      | Type                 | Description                                                                                          |
+| ------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `data_value`                   | `float`, optional    | Only include data with specified data value                                                          |
+| `data_value__ne`               | `float`, optional    | Excludes the specified data value                                                                    |
+| `data_value__gt`               | `float`, optional    | Data values greater than the specified value                                                         |
+| `data_value__gte`              | `float`, optional    | Data values greater than or equal to the specified value                                             |
+| `data_value__lt`               | `float`, optional    | Data values less than the specified value                                                            |
+| `data_value__lte`              | `float`, optional    | Data values less than or equal to the specified value                                                |
+| `data_value__isnull`           | `bool`, optional     | Whether the data value is null                                                                       |
+| `data_value__is_no_data_value` | `bool`, optional     | Whether the data value is not a data value                                                           |
+| `local_date_time`              | `datetime`, optional | Specific local date and time to filter the results                                                   |
+| `local_date_time__gt`          | `datetime`, optional | Local date and time greater than the specified value                                                 |
+| `local_date_time__gte`         | `datetime`, optional | Local date and time greater than or equal to the specified value                                     |
+| `local_date_time__lt`          | `datetime`, optional | Local date and time less than the specified value                                                    |
+| `local_date_time__lte`         | `datetime`, optional | Local date and time less than or equal to the specified value                                        |
+| `utc_date_time`                | `datetime`, optional | Specific UTC date and time to filter the results                                                     |
+| `utc_date_time__gt`            | `datetime`, optional | UTC date and time greater than the specified value                                                   |
+| `utc_date_time__gte`           | `datetime`, optional | UTC date and time greater than or equal to the specified value                                       |
+| `utc_date_time__lt`            | `datetime`, optional | UTC date and time less than the specified value                                                      |
+| `utc_date_time__lte`           | `datetime`, optional | UTC date and time less than or equal to the specified value                                          |
+| `order_by`                     | `str`, optional      | Name of the column we want to order data. Suported ordering `local_date_time` and `-local_date_time` |
 
 The method is returning dictionary with the following structure:
 
@@ -498,4 +514,3 @@ The method is returning dictionary with the following structure:
   ]
 }
 ```
-
