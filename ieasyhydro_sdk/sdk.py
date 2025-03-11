@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from ieasyhydro_sdk.sdk_endpoint_definitions import IEasyHydroSDKEndpointsBase, IEasyHydroHFSDKEndpointsBase
@@ -227,3 +226,45 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
             raise ValueError(
                 f"Could not retrieve {norm_type} norm for site {site_code}, got status code {norm_response.status_code}"
             )
+
+    def get_data_values_for_site(
+            self,
+            site_code,
+            year,
+            month,
+    ):
+ 
+        
+        site_response = self._call_get_site_for_site_code(site_code, 'hydro')
+        if site_response.status_code != 200:
+            raise ValueError(f"Could not retrieve site info for {site_code}")
+        
+        sites = site_response.json()
+        if not sites:
+            raise ValueError(f"No site found with code {site_code}")
+        
+        site_data = sites[0]
+        
+        metric_response = self._call_get_data_values(
+            site_code=site_code,
+            site_type='hydro',
+            year=year,
+            month=month,
+        )
+
+        if not metric_response or metric_response.status_code != 200:
+            raise ValueError(f"Could not retrieve data values, got status code {metric_response.status_code if metric_response else 'None'}")
+
+        values = metric_response.json()
+        
+        return {
+            'site': {
+                'name': site_data['name'],
+                'site_code': site_code,
+                'region': site_data['site']['region']['name'],
+                'basin': site_data['site']['basin']['name'],
+                'longitude': site_data['site']['longitude'],
+                'latitude': site_data['site']['latitude'],
+            },
+            'data': values
+        }

@@ -1,8 +1,7 @@
-
 from typing import Optional
 
 from ieasyhydro_sdk.sdk_base import IEasyHydroSDKBase, IEasyHydroHFSDKBase
-from ieasyhydro_sdk.filters import GetDataValueFilters
+from ieasyhydro_sdk.filters import GetDataValueFilters, BasicDataValueFilters
 
 
 class IEasyHydroSDKEndpointsBase(IEasyHydroSDKBase):
@@ -145,4 +144,26 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         path = f'stations/{self.organization_uuid}/virtual'
         return self._call_api(
             method, path, paginated_endpoint=paginate, params=params
+        )
+
+    def _call_get_data_values(
+            self,
+            site_code: str,
+            site_type: str,
+            year: int,
+            month: int,
+    ):
+        site_uuid = self._get_site_uuid_for_site_code(site_code, site_type)
+        if not site_uuid:
+            return None
+
+        method = "GET"
+        path = f"metrics/operational-journal/{site_uuid}/{year}/{month}/daily-data"
+        params = {}
+
+        return self._call_api(
+            method,
+            path,
+            params=params,
+            paginated_endpoint=False
         )
