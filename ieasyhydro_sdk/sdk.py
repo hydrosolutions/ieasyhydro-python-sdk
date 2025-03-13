@@ -209,14 +209,25 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
         else:
             raise ValueError(f"Could not retrieve virtual sites, got status code {sites_response.status_code}")
 
-    def get_norm_for_site(self, site_code, norm_type, norm_period="d"):
+    def get_norm_for_site(self, site_code, norm_type, norm_period="d", automatic=False):
+        """
+        Get norm data for a site.
+        
+        Args:
+            site_code: Station code
+            norm_type: Type of norm ('discharge', 'precipitation', or 'temperature')
+            norm_period: Period for norm data ('d' for daily, default)
+            automatic: If True, get norms for automatic stations, if False for manual (default False)
+        """
+        station_type = 'A' if automatic else 'M'
+        
         match norm_type:
             case 'discharge':
-                norm_response = self._call_get_discharge_norm_for_site(site_code, norm_period)
+                norm_response = self._call_get_discharge_norm_for_site(site_code, norm_period, station_type)
             case 'precipitation':
-                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 'p')
+                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 'p', station_type)
             case 'temperature':
-                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 't')
+                norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 't', station_type)
             case _:
                 raise ValueError(f"Can only retrieve discharge, precipitation or temperature norms, got {norm_type}")
 
