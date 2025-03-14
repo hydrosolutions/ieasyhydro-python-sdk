@@ -35,18 +35,18 @@ class GetDataValueFilters(BasicDataValueFilters):
 class BasicHFDataValueFilters(TypedDict, total=False):
     view_type: Literal['daily', 'measurements']
     display_type: Literal['individual', 'grouped']
-    timestamp_local__gte: str
-    timestamp_local__lt: str
+    local_date_time__gte: Optional[str]
+    local_date_time__lt: Optional[str]
     order_direction: Optional[str]
-    order_param: Optional[str]
-    timestamp_local: Optional[str]
-    timestamp_local__gt: Optional[str]
-    timestamp_local__lte: Optional[str]
-    avg_value__gt: Optional[float]
-    avg_value__gte: Optional[float]
-    avg_value__lt: Optional[float]
-    avg_value__lte: Optional[float]
-    metric_name__in: Optional[List[str]]
+    order_by: Optional[str]
+    local_date_time: Optional[str]
+    local_date_time__gt: Optional[str]
+    local_date_time__lte: Optional[str]
+    data_value__gt: Optional[float]
+    data_value__gte: Optional[float]
+    data_value__lt: Optional[float]
+    data_value__lte: Optional[float]
+    variable_name: Optional[List[str]]
     value_type__in: Optional[List[str]]
     sensor_identifier: Optional[str]
     page: Optional[int]
@@ -54,7 +54,5 @@ class BasicHFDataValueFilters(TypedDict, total=False):
 
 
 class GetHFDataValuesFilters(BasicHFDataValueFilters):
-    station: Optional[int]  
-    station__in: Optional[List[int]]
-    station__station_code: Optional[str]
-    station__station_code__in: Optional[List[str]]
+    site_ids: Optional[List[int]]
+    site_codes: Optional[List[str]]

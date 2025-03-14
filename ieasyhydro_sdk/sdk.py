@@ -238,69 +238,66 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                 f"Could not retrieve {norm_type} norm for site {site_code}, got status code {norm_response.status_code}"
             )
 
-    def get_data_values_for_site(
-            self,
-            site_type: str,
-            filters: GetHFDataValuesFilters = None,
-    ):
+    def get_data_values_for_site(self, site_type: str, filters: GetHFDataValuesFilters = None):
         api_filters = self.map_filters(filters) if filters else {}
-        
-        # Add default values for hydro metrics if not present
         if site_type == 'hydro':
-            if 'view_type' not in api_filters:
-                api_filters['view_type'] = 'measurements'
-            if 'display_type' not in api_filters:
-                api_filters['display_type'] = 'individual'
+            api_filters.setdefault('view_type', 'measurements')
+            api_filters.setdefault('display_type', 'individual')
         
-        response = self._call_get_data_values_for_site(
-            site_type=site_type,
-            filters=api_filters,
-        )
-        
+        response = self._call_get_data_values_for_site(site_type=site_type, filters=api_filters)
         if not response or response.status_code != 200:
             return []
 
         try:
             response_data = response.json()
-            all_values = response_data['results'] if 'results' in response_data else response_data
-            
+            all_values = response_data.get('results', response_data) if isinstance(response_data, dict) else response_data
             if not all_values:
                 return []
 
-            # Group values by station
-            stations_data = {}
+            # Process site codes - ensure it's always a list
+            site_codes = api_filters.get('station__station_code__in', [])
+            if isinstance(site_codes, str):
+                site_codes = [site_codes]
+            
+            station_values = {}
             for value in all_values:
                 station_id = value['station_id']
-                if station_id not in stations_data:
-                    stations_data[station_id] = []
-                stations_data[station_id].append(value)
+                if station_id not in station_values:
+                    # Get site code from value or use the first site code if only one is provided
+                    site_code = value.get('station_code')
+                    if not site_code and site_codes and len(site_codes) == 1:
+                        site_code = site_codes[0]
+                    
+                    station_values[station_id] = {
+                        'site': {
+                            'site_id': station_id,
+                            'site_code': site_code
+                        },
+                        'variable': {
+                            'variable_code': value['metric_name'],
+                            'variable_name': value['metric_name'],
+                            'unit': value.get('unit', ''),
+                            'variable_type': value.get('value_type', site_type),
+                        },
+                        'data_values': []
+                    }
+                
+                station_values[station_id]['data_values'].append({
+                    'data_value': value.get('avg_value', value.get('value')),
+                    'local_date_time': datetime.fromisoformat(value['timestamp_local']),
+                    'value_code': value.get('value_code', None),
+                })
 
-            # Return list of station data
-            result = []
-            for station_values in stations_data.values():
-                first_value = station_values[0]
-                station_data = {
-                    'site': {
-                        'site_id': first_value['station_id'],
-                        'site_code': self._get_station_code_for_station_id(first_value['station_id'], site_type),
-                    },
-                    'variable': {
-                        'variable_code': first_value['metric_name'],
-                        'variable_name': first_value['metric_name'],
-                        'unit': 'cm' if first_value['metric_name'] == 'WLD' else '',
-                        'variable_type': first_value.get('value_type', site_type),  # Default to site_type if value_type not present
-                    },
-                    'data_values': [
-                        {
-                            'data_value': value.get('avg_value', value.get('value')),  # Try both field names
-                            'local_date_time': datetime.fromisoformat(value['timestamp_local'].replace('Z', '+00:00')),
-                            'value_code': value.get('value_code', None),  # Make value_code optional
-                        } for value in station_values
-                    ]
-                }
-                result.append(station_data)
+            if len(station_values) > 1 and len(site_codes) > 1:
+                for site_code in site_codes:
+                    site_response = self._call_get_site_for_site_code(site_code, site_type)
+                    if site_response.status_code == 200:
+                        for site in site_response.json():
+                            station_id = site.get('id')
+                            if station_id in station_values and not station_values[station_id]['site']['site_code']:
+                                station_values[station_id]['site']['site_code'] = site_code
 
-            return result
+            return list(station_values.values())
             
         except Exception as e:
             print(f"Error processing response: {e}")

@@ -62,7 +62,7 @@ class IEasyHydroSDKEndpointsBase(IEasyHydroSDKBase):
 
 
 class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
-    def _call_get_site_for_site_code(self, site_code, site_type):
+    def _call_get_site_for_site_code(self, site_code, site_type, station_type=None):
         def _get_path():
             if site_type == 'hydro':
                 return f'stations/{self.organization_uuid}/hydrological'
@@ -78,6 +78,11 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         params = {
             'station_code': site_code
         }
+        
+        # Add station_type to params if provided
+        if station_type:
+            params['station_type'] = station_type
+        
         return self._call_api(
             method, path, params=params, paginated_endpoint=False
         )
@@ -90,7 +95,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             site_type: Type of site ('hydro' or 'meteo')
             station_type: Type of station ('A' for automatic or 'M' for manual, default 'M')
         """
-        site_response = self._call_get_site_for_site_code(site_code, site_type)
+        site_response = self._call_get_site_for_site_code(site_code, site_type, station_type)
         if site_response.status_code == 200:
             sites = site_response.json()
             # Filter by station type
@@ -131,7 +136,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
 
     def _call_get_discharge_norm_for_site(self, site_code, norm_type="d", station_type="M"):
         return self._call_get_norm_for_site(
-            site_code, 'hydro', {"norm_type": norm_type, "virtual": "false"}, station_type
+            site_code, 'hydro', {"norm_type": norm_type}, station_type
         )
 
     def _call_get_meteo_norm_for_site(self, site_code, norm_type="d", norm_metric="p", station_type="M"):
@@ -171,12 +176,16 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         
         Args:
             site_type: Type of station ('hydro' or 'meteo')
-            station_code: Station code
-            filters: Data value filters including required timestamp_local__gte and timestamp_local__lt
+            filters: Data value filters
             paginate: Whether to use pagination
         """
-        if not filters or 'timestamp_local__gte' not in filters or 'timestamp_local__lt' not in filters:
-            raise ValueError("timestamp_local__gte and timestamp_local__lt are required in filters")
+        if not filters:
+            raise ValueError("Filters are required")
+        
+        # Check if at least one timestamp filter is present
+        timestamp_filters = [f for f in filters if f.startswith('timestamp_local__')]
+        if not timestamp_filters:
+            raise ValueError("At least one timestamp filter (timestamp_local__*) is required")
 
         method = 'get'
         
@@ -188,9 +197,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             if 'view_type' not in filters or 'display_type' not in filters:
                 raise ValueError("view_type and display_type are required for hydro metrics")
             path = f'metrics/{self.organization_uuid}/hydro/{filters["view_type"]}/{filters["display_type"]}'
-            # Remove these from params as they're in the path
-            params.pop('view_type', None)
-            params.pop('display_type', None)
+
         elif site_type == 'meteo':
             path = f'metrics/{self.organization_uuid}/meteo'
         else:
@@ -203,32 +210,3 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             params=params,
         )
     
-    def _get_station_code_for_station_id(self, station_id, site_type):
-        """Get station code for a given station ID."""
-        if site_type == 'hydro':
-            response = self._call_get_discharge_sites()
-        elif site_type == 'meteo':
-            response = self._call_get_meteo_sites()
-        else:
-            return None
-        
-        if response.status_code == 200:
-            stations = response.json()
-            # Find the station with exact matching ID
-            for station in stations:
-                if station.get('id') == station_id:
-                    return station.get('station_code')
-                
-                # If no direct match, check related stations
-                related_stations = []
-                if site_type == 'hydro':
-                    related_stations.extend(station.get('related_hydro_stations', []))
-                else:
-                    related_stations.extend(station.get('related_meteo_stations', []))
-                    
-                for related in related_stations:
-                    if related.get('id') == station_id:
-                        return related.get('station_code')
-        
-        return None
-
