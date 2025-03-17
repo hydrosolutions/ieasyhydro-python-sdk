@@ -239,11 +239,15 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
             )
 
     def get_data_values_for_site(self, site_type: str, filters: GetHFDataValuesFilters = None):
-        api_filters = self.map_filters(filters) if filters else {}
-        if site_type == 'hydro':
-            api_filters.setdefault('view_type', 'measurements')
-            api_filters.setdefault('display_type', 'individual')
+        if filters is None:
+            filters = {}
         
+        filters = {
+            'view_type': 'measurements',
+            'display_type': 'individual',
+            **filters
+        }
+        api_filters = self.map_filters(filters) if filters else {}
         response = self._call_get_data_values_for_site(site_type=site_type, filters=api_filters)
         if not response or response.status_code != 200:
             return []
@@ -262,7 +266,8 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                     station_values[station_id] = {
                         'site': {
                             'site_id': station_id,
-                            'site_code': value['station_code']
+                            'site_code': value['station_code'],
+                            'site_uuid': value['station_uuid'],
                         },
                         'variable': {
                             'variable_code': value['metric_name'],

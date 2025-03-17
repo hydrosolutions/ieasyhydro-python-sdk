@@ -33,8 +33,8 @@ class GetDataValueFilters(BasicDataValueFilters):
 
 
 class BasicHFDataValueFilters(TypedDict, total=False):
-    view_type: Literal['daily', 'measurements']
-    display_type: Literal['individual', 'grouped']
+    view_type: Optional[Literal['daily', 'measurements']]
+    display_type: Optional[Literal['individual', 'grouped']]
     local_date_time__gte: Optional[str]
     local_date_time__lt: Optional[str]
     order_direction: Optional[str]
