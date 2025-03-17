@@ -253,25 +253,16 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
             all_values = response_data.get('results', response_data) if isinstance(response_data, dict) else response_data
             if not all_values:
                 return []
-
-            # Process site codes - ensure it's always a list
-            site_codes = api_filters.get('station__station_code__in', [])
-            if isinstance(site_codes, str):
-                site_codes = [site_codes]
             
             station_values = {}
             for value in all_values:
                 station_id = value['station_id']
                 if station_id not in station_values:
-                    # Get site code from value or use the first site code if only one is provided
-                    site_code = value.get('station_code')
-                    if not site_code and site_codes and len(site_codes) == 1:
-                        site_code = site_codes[0]
-                    
+
                     station_values[station_id] = {
                         'site': {
                             'site_id': station_id,
-                            'site_code': site_code
+                            'site_code': value['station_code']
                         },
                         'variable': {
                             'variable_code': value['metric_name'],
@@ -287,15 +278,6 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                     'local_date_time': datetime.fromisoformat(value['timestamp_local']),
                     'value_code': value.get('value_code', None),
                 })
-
-            if len(station_values) > 1 and len(site_codes) > 1:
-                for site_code in site_codes:
-                    site_response = self._call_get_site_for_site_code(site_code, site_type)
-                    if site_response.status_code == 200:
-                        for site in site_response.json():
-                            station_id = site.get('id')
-                            if station_id in station_values and not station_values[station_id]['site']['site_code']:
-                                station_values[station_id]['site']['site_code'] = site_code
 
             return list(station_values.values())
             
