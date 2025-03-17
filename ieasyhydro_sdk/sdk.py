@@ -271,7 +271,6 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                         },
                         'variable': {
                             'variable_code': value['metric_name'],
-                            'variable_name': value['metric_name'],
                             'unit': value.get('unit', ''),
                             'variable_type': value.get('value_type', site_type),
                         },
