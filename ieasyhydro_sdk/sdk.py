@@ -232,7 +232,10 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                 raise ValueError(f"Can only retrieve discharge, precipitation or temperature norms, got {norm_type}")
 
         if norm_response.status_code == 200:
-            return [float(entry["value"]) for entry in norm_response.json()]
+            return self._ensure_norm_data_has_correct_length(
+                [float(entry["value"]) for entry in norm_response.json()],
+                norm_period
+            )
         else:
             raise ValueError(
                 f"Could not retrieve {norm_type} norm for site {site_code}, got status code {norm_response.status_code}"

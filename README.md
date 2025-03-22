@@ -343,21 +343,13 @@ norm_data = ieasyhydro_hf_sdk.get_norm_for_site(
 
 ```
 
-The data you would get in the `norm_data` variable would be:
-
-# Get pentadal norm
-
-pentadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="p")
-
-````
-
 The data returned is a list of float values representing the norm for each period. The length of the list depends on the norm_period:
 
 - Decadal: 36 values (3 values per month)
 - Monthly: 12 values (1 value per month)
 - Pentadal: 72 values (6 values per month)
 
-Example decadal norm data:
+Example norm data:
 
 ```python
 [
@@ -398,8 +390,32 @@ Example decadal norm data:
     1.92897,
     1.85072
 ]
+```
 
-````
+If no norm is uploaded for the requested site code, an empty list will be returned.
+If the requested site code has only partially uploaded norm data, the missing norm will
+be replaced with `None` values. For example:
+
+```
+monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
+
+print(montly_norm)
+
+[
+    1.50,
+    None,
+    1.75,
+    2.23,
+    None,
+    None,
+    None,
+    6.45,
+    7.50,
+    None,
+    None,
+    None
+]
+```
 
 ### Data Values
 

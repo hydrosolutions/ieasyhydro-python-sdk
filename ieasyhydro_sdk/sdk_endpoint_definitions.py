@@ -211,3 +211,25 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             params=params,
         )
     
+    def _ensure_norm_data_has_correct_length(self, norm_data, norm_period):
+        period_lengths = {
+            'd': 36,  # Daily - 36 values (3 per month)
+            'm': 12,  # Monthly - 12 values
+            'p': 72   # Pentad - 72 values (6 per month)
+        }
+
+        if not norm_data:
+            return []
+        
+        if norm_period not in period_lengths:
+            raise ValueError(f"Invalid norm period '{norm_period}'. Must be one of: {', '.join(period_lengths.keys())}")
+            
+        target_length = period_lengths[norm_period]
+        
+        normalized_data = [None] * target_length
+        
+        for i, value in enumerate(norm_data[:target_length]):
+            normalized_data[i] = value
+            
+        return normalized_data
+            
