@@ -311,14 +311,19 @@ For iEasyHydroHF, you can specify:
   - `p` for pentad (5-day)
   - `m` for monthly
 - Whether to get norms for automatic or manual stations
-  The interface for retrieving the norm however is the same:
+
+Example for retrieving norms with iEasyHydroHF:
 
 ```python
 from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
 
 ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
-norm_data = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
+# Get decadal norm (default)
+decadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
+
+# Get monthly norm
+monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
 
 # Get pentad norms for automatic station
 norm_data = ieasyhydro_hf_sdk.get_norm_for_site(
@@ -339,6 +344,20 @@ norm_data = ieasyhydro_hf_sdk.get_norm_for_site(
 ```
 
 The data you would get in the `norm_data` variable would be:
+
+# Get pentadal norm
+
+pentadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="p")
+
+````
+
+The data returned is a list of float values representing the norm for each period. The length of the list depends on the norm_period:
+
+- Decadal: 36 values (3 values per month)
+- Monthly: 12 values (1 value per month)
+- Pentadal: 72 values (6 values per month)
+
+Example decadal norm data:
 
 ```python
 [
@@ -380,7 +399,7 @@ The data you would get in the `norm_data` variable would be:
     1.85072
 ]
 
-```
+````
 
 ### Data Values
 
