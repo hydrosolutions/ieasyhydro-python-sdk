@@ -303,12 +303,14 @@ The method is returning dictionary with the following structure:
 As norms also work differently in iEasyHydroHF, the output you get when requesting norms from its SDK is slightly different.
 iEasyHydroHF only works with the current norm values, instead of calculating it from norm data for all the previous years
 which also means the "cutoff" logic described above isn't relevant here.
+For iEasyHydroHF, you can specify:
 
-The iEasyHydroHF SDK supports three different norm periods:
-
-- `d` - decadal (default)
-- `m` - monthly
-- `p` - pentadal (5-day periods)
+- The norm type (`discharge`, `precipitation`, or `temperature`)
+- The norm period:
+  - `d` for daily (default)
+  - `p` for pentad (5-day)
+  - `m` for monthly
+- Whether to get norms for automatic or manual stations
 
 Example for retrieving norms with iEasyHydroHF:
 
@@ -323,8 +325,22 @@ decadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
 # Get monthly norm
 monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
 
-# Get pentadal norm
-pentadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="p")
+# Get pentad norms for automatic station
+norm_data = ieasyhydro_hf_sdk.get_norm_for_site(
+    site_code="15194",
+    norm_type="discharge",
+    norm_period="p",  # pentad (5-day) norms
+    automatic=True
+)
+
+# Get monthly norms for temperature
+norm_data = ieasyhydro_hf_sdk.get_norm_for_site(
+    site_code="15194",
+    norm_type="temperature",
+    norm_period="m",  # monthly norms
+    automatic=False
+)
+
 ```
 
 The data returned is a list of float values representing the norm for each period. The length of the list depends on the norm_period:
@@ -333,7 +349,7 @@ The data returned is a list of float values representing the norm for each perio
 - Monthly: 12 values (1 value per month)
 - Pentadal: 72 values (6 values per month)
 
-Example decadal norm data:
+Example norm data:
 
 ```python
 [
@@ -374,7 +390,31 @@ Example decadal norm data:
     1.92897,
     1.85072
 ]
+```
 
+If no norm is uploaded for the requested site code, an empty list will be returned.
+If the requested site code has only partially uploaded norm data, the missing norm will
+be replaced with `None` values. For example:
+
+```
+monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
+
+print(montly_norm)
+
+[
+    1.50,
+    None,
+    1.75,
+    2.23,
+    None,
+    None,
+    None,
+    6.45,
+    7.50,
+    None,
+    None,
+    None
+]
 ```
 
 ### Data Values
@@ -514,3 +554,132 @@ The method is returning dictionary with the following structure:
   ]
 }
 ```
+
+For iEasyHydroHF SDK, the method works slightly differently. You specify the site type ('hydro' or 'meteo') and can use filters to narrow down the results:
+
+```python
+from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
+from ieasyhydro_sdk.filters import GetHFDataValuesFilters
+
+ieasyhydro_hf_sdk = IEasyHydroHFSDK()
+
+# Example 1: Get multiple types of water level and discharge measurements
+filters = {
+    "site_codes": ["16159", "16100", "16200"],  # Multiple stations
+    "variable_name": [
+        "WLD",   # Water level daily
+        "WDD",   # Water discharge daily
+        "WLDA",  # Water level daily average
+    ],
+    "local_date_time__gte": "2024-03-01",
+    "local_date_time__lt": "2024-04-01",
+    "view_type": "measurements",
+    "display_type": "individual"
+}
+
+response_data = ieasyhydro_hf_sdk.get_data_values_for_site("hydro", filters=filters)
+
+# Example 2: Get temperature and precipitation measurements
+meteo_filters = {
+    "site_codes": ["16159", "16160"],
+    "variable_name": [
+        "ATDCA",   # Air temperature decade average
+        "PDCA",   # Precipitation decade average
+    ],
+    "local_date_time__gte": "2024-03-01"
+}
+
+meteo_data = ieasyhydro_hf_sdk.get_data_values_for_site("meteo", filters=meteo_filters)
+```
+
+The HF SDK returns data in a similar structure but with some differences:
+
+```python
+[
+    {
+        'site': {
+            'site_id': 123,
+            'site_code': '16159',
+            'site_uuid': 'abc-123-def-456',
+        },
+        'variable': {
+            'variable_code': 'WLD',
+            'unit': 'cm',
+            'variable_type': 'M',
+        },
+        'data_values': [
+            {
+                'data_value': 156.0,
+                'local_date_time': datetime(2024, 3, 1, 8, 0),
+                'value_code': None,
+            },
+            // ... more values ...
+        ]
+    },
+    // ... more stations ...
+]
+```
+
+Available filters for the HF SDK include:
+
+| Parameter              | Type        | Description                                 |
+| ---------------------- | ----------- | ------------------------------------------- |
+| `view_type`            | `str`       | Type of view ('daily' or 'measurements')    |
+| `display_type`         | `str`       | Type of display ('individual' or 'grouped') |
+| `site_codes`           | `List[str]` | List of station codes to filter             |
+| `site_ids`             | `List[int]` | List of station IDs to filter               |
+| `variable_name`        | `List[str]` | List of metric names to filter              |
+| `local_date_time__gte` | `str`       | Timestamp greater than or equal to          |
+| `local_date_time__lt`  | `str`       | Timestamp less than                         |
+| `local_date_time`      | `str`       | Exact timestamp match                       |
+| `data_value__gt`       | `float`     | Value greater than                          |
+| `data_value__gte`      | `float`     | Value greater than or equal to              |
+| `data_value__lt`       | `float`     | Value less than                             |
+| `data_value__lte`      | `float`     | Value less than or equal to                 |
+| `order_by`             | `str`       | Field to order by                           |
+| `order_direction`      | `str`       | Direction of ordering                       |
+| `page`                 | `int`       | Page number for pagination                  |
+| `page_size`            | `int`       | Number of items per page                    |
+
+#### Available Metric Names
+
+For hydrological measurements:
+
+| Metric Code | Description                               |
+| ----------- | ----------------------------------------- |
+| `WLD`       | Water level daily                         |
+| `WLDA`      | Water level daily average                 |
+| `WLDC`      | Water level decadal                       |
+| `WLDCA`     | Water level decade average                |
+| `WDD`       | Water discharge daily                     |
+| `WDDA`      | Water discharge daily average             |
+| `WDFA`      | Water discharge fiveday average           |
+| `WDDCA`     | Water discharge decade average            |
+| `WDDCAH`    | Water discharge decade average historical |
+| `WTO`       | Water temperature observation             |
+| `ATO`       | Air temperature observation               |
+| `IPO`       | Ice phenomena observation                 |
+| `PD`        | Precipitation daily                       |
+| `WTDA`      | Water temperature daily average           |
+| `ATDA`      | Air temperature daily average             |
+| `RCSA`      | River cross section area                  |
+| `MD`        | Maximum depth                             |
+
+For meteorological measurements:
+
+| Metric Code | Description                     |
+| ----------- | ------------------------------- |
+| `ATDCA`     | Air temperature decade average  |
+| `PDCA`      | Precipitation decade average    |
+| `ATMA`      | Air temperature monthly average |
+| `PMA`       | Precipitation monthly average   |
+
+The value code can be:
+
+| Value Code | Description           |
+| ---------- | --------------------- |
+| `M`        | Manual measurement    |
+| `A`        | Automatic measurement |
+| `E`        | Estimated value       |
+| `I`        | Imported value        |
+| `U`        | Unknown source        |

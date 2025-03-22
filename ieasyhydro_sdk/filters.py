@@ -1,6 +1,5 @@
 from datetime import datetime
-
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, Literal
 
 
 class BasicDataValueFilters(TypedDict, total=False):
@@ -31,3 +30,29 @@ class GetDataValueFilters(BasicDataValueFilters):
     include_meteo: bool
     variable_codes: Optional[List[str]]
     group_ids: Optional[List[int]]
+
+
+class BasicHFDataValueFilters(TypedDict, total=False):
+    view_type: Optional[Literal['daily', 'measurements']]
+    display_type: Optional[Literal['individual', 'grouped']]
+    local_date_time__gte: Optional[str]
+    local_date_time__lt: Optional[str]
+    order_direction: Optional[str]
+    order_by: Optional[str]
+    local_date_time: Optional[str]
+    local_date_time__gt: Optional[str]
+    local_date_time__lte: Optional[str]
+    data_value__gt: Optional[float]
+    data_value__gte: Optional[float]
+    data_value__lt: Optional[float]
+    data_value__lte: Optional[float]
+    variable_name: Optional[List[str]]
+    value_type__in: Optional[List[str]]
+    sensor_identifier: Optional[str]
+    page: Optional[int]
+    page_size: Optional[int]
+
+
+class GetHFDataValuesFilters(BasicHFDataValueFilters):
+    site_ids: Optional[List[int]]
+    site_codes: Optional[List[str]]
