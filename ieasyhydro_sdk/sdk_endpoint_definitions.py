@@ -183,7 +183,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             raise ValueError("Filters are required")
         
         # Check if at least one timestamp filter is present
-        timestamp_filters = [f for f in filters if f.startswith('timestamp_local__')]
+        timestamp_filters = [f for f in filters if f.startswith('timestamp')]
         if not timestamp_filters:
             raise ValueError("At least one timestamp filter is required")
 
@@ -191,18 +191,9 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         
         # Prepare parameters
         params = dict(filters) if filters else {}
-        view_type = params.pop('view_type', None)
-        display_type = params.pop('display_type', None)
-        # Build path based on site type
-        if site_type == 'hydro':
-            if not view_type or not display_type:
-                raise ValueError("view_type and display_type are required for hydro metrics")
-            path = f'metrics/{self.organization_uuid}/hydro/{view_type}/{display_type}'
-
-        elif site_type == 'meteo':
-            path = f'metrics/{self.organization_uuid}/meteo'
-        else:
-            return None
+        
+        # todo construct path based on site type and variable names
+        # or even better move the complexity to the backend and handle it there
         
         return self._call_api(
             method,
