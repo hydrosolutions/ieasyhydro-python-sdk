@@ -32,10 +32,12 @@ class IEasyHydroSDKBase:
                     f'initialization or set the "{env_name}" environment variable.')
 
     def _login(self):
+        print("sending login request")
         response = requests.post(
             url=urljoin(self.host, 'access_tokens'),
             json={'usernameOrEmail': self.username, 'password': self.password}
         )
+        print("login response", response.json())
 
         if response.status_code == 201:
             token = response.json()['resources'][0]['tokenString']
@@ -159,4 +161,3 @@ class IEasyHydroHFSDKBase(IEasyHydroSDKBase):
             self.organization_uuid = response_json["user"]["organization"]["uuid"]
         else:
             raise ValueError('Configured username and password are not valid.')
-

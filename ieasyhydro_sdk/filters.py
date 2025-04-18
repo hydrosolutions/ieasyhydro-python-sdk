@@ -33,10 +33,6 @@ class GetDataValueFilters(BasicDataValueFilters):
 
 
 class BasicHFDataValueFilters(TypedDict, total=False):
-    view_type: Optional[Literal['daily', 'measurements']]
-    display_type: Optional[Literal['individual', 'grouped']]
-    order_direction: Optional[str]
-    order_by: Optional[str]
     local_date_time: Optional[str]
     local_date_time__gt: Optional[str]
     local_date_time__lte: Optional[str]
@@ -47,12 +43,7 @@ class BasicHFDataValueFilters(TypedDict, total=False):
     utc_date_time__gt: Optional[str]
     utc_date_time__lt: Optional[str]
     utc_date_time__lte: Optional[str]
-    data_value__gt: Optional[float]
-    data_value__gte: Optional[float]
-    data_value__lt: Optional[float]
-    data_value__lte: Optional[float]
-    variable_name: Optional[List[str]]
-    value_type__in: Optional[List[str]]
+    variable_names: Optional[List[str]]
     page: Optional[int]
     page_size: Optional[int]
 

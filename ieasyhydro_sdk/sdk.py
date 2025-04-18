@@ -241,90 +241,18 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                 f"Could not retrieve {norm_type} norm for site {site_code}, got status code {norm_response.status_code}"
             )
 
-    def get_data_values_for_site(self, site_type: str, filters: GetHFDataValuesFilters = None):
-        if filters is None:
-            filters = {}
-        
+    def get_data_values_for_site(self, filters: GetHFDataValuesFilters = None):
         filters = {
             'view_type': 'measurements',
             'display_type': 'individual',
             **filters
         }
-        api_filters = self.map_filters(filters) if filters else {}
-        response = self._call_get_data_values_for_site(site_type=site_type, filters=api_filters)
+        api_filters = self._map_filters(filters) if filters else {}
+        response = self._call_get_data_values_for_site(filters=api_filters)
         if not response or response.status_code != 200:
-            return []
+            return {
+                'status_code': response.status_code,
+                'text': response.text
+            }
 
-        try:
-            response_data = response.json()
-            all_values = response_data.get('results', response_data) if isinstance(response_data, dict) else response_data
-            if not all_values:
-                return []
-            
-            station_values = {}
-            for value in all_values:
-                station_id = value['station_id']
-                if station_id not in station_values:
-
-                    station_values[station_id] = {
-                        'site': {
-                            'site_id': station_id,
-                            'site_code': value['station_code'],
-                            'site_uuid': value['station_uuid'],
-                        },
-                        'variable': {
-                            'variable_code': value['metric_name'],
-                            'unit': value.get('unit', ''),
-                            'variable_type': value.get('value_type', site_type),
-                        },
-                        'data_values': []
-                    }
-                
-                station_values[station_id]['data_values'].append({
-                    'data_value': value.get('avg_value', value.get('value')),
-                    'local_date_time': datetime.fromisoformat(value['timestamp_local']),
-                    'value_code': value.get('value_code', None),
-                })
-
-            return list(station_values.values())
-            
-        except Exception as e:
-            print(f"Error processing response: {e}")
-            return []
-
-    def map_filters(self, old_filters):
-        """Map old SDK filter names to new HF SDK filter names."""
-        if not old_filters:
-            return {}
-        
-        filter_mapping = {
-            'site_ids': 'station__in',
-            'site_codes': 'station__station_code__in',
-            'local_date_time__gt': 'timestamp_local__gt',
-            'local_date_time__gte': 'timestamp_local__gte',
-            'local_date_time__lt': 'timestamp_local__lt',
-            'local_date_time__lte': 'timestamp_local__lte',
-            'local_date_time': 'timestamp_local',
-            'utc_date_time__gt': 'timestamp__gt',
-            'utc_date_time__gte': 'timestamp__gte',
-            'utc_date_time__lt': 'timestamp__lt',
-            'utc_date_time__lte': 'timestamp__lte',
-            'utc_date_time': 'timestamp',
-            'data_value__gt': 'avg_value__gt',
-            'data_value__gte': 'avg_value__gte',
-            'data_value__lt': 'avg_value__lt',
-            'data_value__lte': 'avg_value__lte',
-            'order_by': 'order_param',
-            'order_direction': 'order_direction',
-            'variable_name': 'metric_name__in',
-        }
-        
-        mapped_filters = {}
-        for old_key, value in old_filters.items():
-            if old_key in filter_mapping:
-                mapped_filters[filter_mapping[old_key]] = value
-            else:
-                mapped_filters[old_key] = value
-            
-        return mapped_filters
-
+        return response.json()

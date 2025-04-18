@@ -167,9 +167,7 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
     
     def _call_get_data_values_for_site(
         self,
-        site_type: str,
         filters: Optional[GetHFDataValuesFilters] = None,
-        paginate: bool = False,
     ):
         """
         Call API endpoint to get data values for a specific site.
@@ -177,28 +175,19 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
         Args:
             site_type: Type of station ('hydro' or 'meteo')
             filters: Data value filters
-            paginate: Whether to use pagination
         """
         if not filters:
             raise ValueError("Filters are required")
-        
-        # Check if at least one timestamp filter is present
-        timestamp_filters = [f for f in filters if f.startswith('timestamp')]
-        if not timestamp_filters:
-            raise ValueError("At least one timestamp filter is required")
 
         method = 'get'
         
-        # Prepare parameters
-        params = dict(filters) if filters else {}
-        
-        # todo construct path based on site type and variable names
-        # or even better move the complexity to the backend and handle it there
+        params = dict(filters)
+        path = f'sdk-data-values/{self.organization_uuid}'
         
         return self._call_api(
             method,
             path,
-            paginated_endpoint=paginate,
+            paginated_endpoint=False, # handled in a different way
             params=params,
         )
     
@@ -223,4 +212,34 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
             normalized_data[i] = value
             
         return normalized_data
+    
+    def _map_filters(self, old_filters):
+        """Map old SDK filter names to new HF SDK filter names."""
+        if not old_filters:
+            return {}
+        
+        filter_mapping = {
+            'site_ids': 'station__in',
+            'site_codes': 'station__station_code__in',
+            'local_date_time__gt': 'timestamp_local__gt',
+            'local_date_time__gte': 'timestamp_local__gte',
+            'local_date_time__lt': 'timestamp_local__lt',
+            'local_date_time__lte': 'timestamp_local__lte',
+            'local_date_time': 'timestamp_local',
+            'utc_date_time__gt': 'timestamp__gt',
+            'utc_date_time__gte': 'timestamp__gte',
+            'utc_date_time__lt': 'timestamp__lt',
+            'utc_date_time__lte': 'timestamp__lte',
+            'utc_date_time': 'timestamp',
+            'variable_names': 'metric_name__in',
+        }
+        
+        mapped_filters = {}
+        for old_key, value in old_filters.items():
+            if old_key in filter_mapping:
+                mapped_filters[filter_mapping[old_key]] = value
+            else:
+                mapped_filters[old_key] = value
+            
+        return mapped_filters
             
