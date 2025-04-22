@@ -423,10 +423,6 @@ We can fetch data for all data types stored in iEasyHydro database by using the 
 We just need to specify `site_code` and `variable_type` we want to fetch, and function will automatically fetch all
 data values from the API. It will take care to perform requests in chunks in order to avoid overloading of the server.
 
-**IMPORTANT
-At this time, iEasyHydro HF still doesn't provide the interface for retrieving the data values. As soon as it is in
-operational use, the library will be updated to provide support for this as well.**
-
 Examples 1: Fetch all daily discharge values
 
 ```python
@@ -555,7 +551,7 @@ The method is returning dictionary with the following structure:
 }
 ```
 
-For iEasyHydroHF SDK, the method works slightly differently. You specify the site type ('hydro' or 'meteo') and can use filters to narrow down the results:
+For iEasyHydroHF SDK, the method works slightly differently.
 
 ```python
 from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
@@ -563,81 +559,158 @@ from ieasyhydro_sdk.filters import GetHFDataValuesFilters
 
 ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
-# Example 1: Get multiple types of water level and discharge measurements
-filters = {
-    "site_codes": ["16159", "16100", "16200"],  # Multiple stations
-    "variable_name": [
-        "WLD",   # Water level daily
-        "WDD",   # Water discharge daily
-        "WLDA",  # Water level daily average
-    ],
-    "local_date_time__gte": "2024-03-01",
-    "local_date_time__lt": "2024-04-01",
-    "view_type": "measurements",
-    "display_type": "individual"
-}
+# Example 1: Get data values for multiple sites and variables
+filters = GetHFDataValuesFilters(
+    site_codes=["16159", "16100", "16200"],  # Multiple stations
+    variable_names=["WLD", "WDD", "WLDA"],   # Multiple variables
+    local_date_time__gte="2024-03-01",
+    local_date_time__lt="2024-04-01"
+)
 
-response_data = ieasyhydro_hf_sdk.get_data_values_for_site("hydro", filters=filters)
+response_data = ieasyhydro_hf_sdk.get_data_values_for_site(filters=filters)
 
 # Example 2: Get temperature and precipitation measurements
-meteo_filters = {
-    "site_codes": ["16159", "16160"],
-    "variable_name": [
-        "ATDCA",   # Air temperature decade average
-        "PDCA",   # Precipitation decade average
-    ],
-    "local_date_time__gte": "2024-03-01"
-}
+meteo_filters = GetHFDataValuesFilters(
+    site_codes=["16159", "16160"],
+    variable_names=["ATDCA", "PDCA"],  # Air temperature and precipitation decade averages
+    local_date_time__gte="2024-03-01"
+)
 
-meteo_data = ieasyhydro_hf_sdk.get_data_values_for_site("meteo", filters=meteo_filters)
+meteo_data = ieasyhydro_hf_sdk.get_data_values_for_site(filters=meteo_filters)
 ```
 
-The HF SDK returns data in a similar structure but with some differences:
+### Important API Requirements
+
+The API has specific requirements for the filters:
+
+1. **At least one timestamp filter must be present** - You must include at least one of the timestamp filters (local or UTC) to limit the time range of the data.
+2. **At least one variable name must be specified** - You must include at least one metric name in the `variable_names` parameter.
+
+### Error Handling Examples
+
+The SDK handles various error scenarios:
 
 ```python
-[
-    {
-        'site': {
-            'site_id': 123,
-            'site_code': '16159',
-            'site_uuid': 'abc-123-def-456',
+# Example 3: Missing timestamp filter
+filters_without_timestamp = GetHFDataValuesFilters(
+    site_codes=["16159"],
+    variable_names=["WLD"]
+)
+# This will raise an error: "At least one timestamp filter must be present"
+
+# Example 4: Missing variable names
+filters_without_variables = GetHFDataValuesFilters(
+    site_codes=["16159"],
+    local_date_time__gte="2024-03-01"
+)
+# This will raise an error: "You must specify at least one metric name"
+
+# Example 5: Invalid variable names
+filters_with_invalid_variables = GetHFDataValuesFilters(
+    site_codes=["16159"],
+    variable_names=["INVALID_CODE"],
+    local_date_time__gte="2024-03-01"
+)
+# This will raise an error: "Invalid metric names: ['INVALID_CODE']"
+
+# Example 6: API error response
+# If the API returns an error, the SDK will return a dictionary with status code and error text
+error_response = {
+    'status_code': 400,
+    'text': 'Bad Request: Invalid parameters'
+}
+```
+
+### Response Examples
+
+The HF SDK returns data in a paginated structure:
+
+```python
+# Example 7: Successful response with data
+{
+    "count": 42,  # Total number of results
+    "next": "https://api.example.com/data?page=2",  # URL for next page, if available
+    "previous": None,  # URL for previous page, if available
+    "results": [
+        {
+            "station_id": 123,
+            "station_uuid": "abc-123-def-456",
+            "station_code": "16159",
+            "station_name": "Station Name",
+            "station_type": "hydro",
+            "data": [
+                {
+                    "variable_code": "WLD",
+                    "unit": "cm",
+                    "values": [
+                        {
+                            "value": 156.0,
+                            "value_type": "M",  # Manual measurement
+                            "timestamp_local": "2024-03-01T08:00:00",
+                            "timestamp_utc": "2024-03-01T02:00:00Z",
+                            "value_code": None
+                        },
+                        # ... more values ...
+                    ]
+                },
+                # ... more variables ...
+            ]
         },
-        'variable': {
-            'variable_code': 'WLD',
-            'unit': 'cm',
-            'variable_type': 'M',
-        },
-        'data_values': [
-            {
-                'data_value': 156.0,
-                'local_date_time': datetime(2024, 3, 1, 8, 0),
-                'value_code': None,
-            },
-            // ... more values ...
-        ]
-    },
-    // ... more stations ...
-]
+        # ... more stations ...
+    ]
+}
+
+# Example 8: Response with non-existent station
+# If a station code doesn't exist, it won't appear in the results
+filters = GetHFDataValuesFilters(
+    site_codes=["16159", "99999"],  # 99999 doesn't exist
+    variable_names=["WLD"],
+    local_date_time__gte="2024-03-01"
+)
+# Response will only include data for station 16159, 99999 will be omitted
+
+# Example 9: Response with station that has no data
+# If a station exists but has no data for the requested variables, the variables will still be included with empty values
+{
+    "count": 1,
+    "next": None,
+    "previous": None,
+    "results": [
+        {
+            "station_id": 123,
+            "station_uuid": "abc-123-def-456",
+            "station_code": "16159",
+            "station_name": "Station Name",
+            "station_type": "hydro",
+            "data": [
+                {
+                    "variable_code": "WLD",
+                    "unit": "cm",
+                    "values": []  # Empty list when no data is available
+                }
+            ]
+        }
+    ]
+}
 ```
 
 Available filters for the HF SDK include:
 
 | Parameter              | Type        | Description                                 |
 | ---------------------- | ----------- | ------------------------------------------- |
-| `view_type`            | `str`       | Type of view ('daily' or 'measurements')    |
-| `display_type`         | `str`       | Type of display ('individual' or 'grouped') |
 | `site_codes`           | `List[str]` | List of station codes to filter             |
 | `site_ids`             | `List[int]` | List of station IDs to filter               |
-| `variable_name`        | `List[str]` | List of metric names to filter              |
-| `local_date_time__gte` | `str`       | Timestamp greater than or equal to          |
-| `local_date_time__lt`  | `str`       | Timestamp less than                         |
-| `local_date_time`      | `str`       | Exact timestamp match                       |
-| `data_value__gt`       | `float`     | Value greater than                          |
-| `data_value__gte`      | `float`     | Value greater than or equal to              |
-| `data_value__lt`       | `float`     | Value less than                             |
-| `data_value__lte`      | `float`     | Value less than or equal to                 |
-| `order_by`             | `str`       | Field to order by                           |
-| `order_direction`      | `str`       | Direction of ordering                       |
+| `variable_names`       | `List[str]` | List of metric names to filter              |
+| `local_date_time__gte` | `str`       | Local timestamp greater than or equal to    |
+| `local_date_time__gt`  | `str`       | Local timestamp greater than                |
+| `local_date_time__lte` | `str`       | Local timestamp less than or equal to       |
+| `local_date_time__lt`  | `str`       | Local timestamp less than                   |
+| `local_date_time`      | `str`       | Exact local timestamp match                 |
+| `utc_date_time__gte`   | `str`       | UTC timestamp greater than or equal to      |
+| `utc_date_time__gt`    | `str`       | UTC timestamp greater than                  |
+| `utc_date_time__lte`   | `str`       | UTC timestamp less than or equal to         |
+| `utc_date_time__lt`    | `str`       | UTC timestamp less than                     |
+| `utc_date_time`        | `str`       | Exact UTC timestamp match                   |
 | `page`                 | `int`       | Page number for pagination                  |
 | `page_size`            | `int`       | Number of items per page                    |
 
@@ -645,41 +718,40 @@ Available filters for the HF SDK include:
 
 For hydrological measurements:
 
-| Metric Code | Description                               |
-| ----------- | ----------------------------------------- |
-| `WLD`       | Water level daily                         |
-| `WLDA`      | Water level daily average                 |
-| `WLDC`      | Water level decadal                       |
-| `WLDCA`     | Water level decade average                |
-| `WDD`       | Water discharge daily                     |
-| `WDDA`      | Water discharge daily average             |
-| `WDFA`      | Water discharge fiveday average           |
-| `WDDCA`     | Water discharge decade average            |
-| `WDDCAH`    | Water discharge decade average historical |
-| `WTO`       | Water temperature observation             |
-| `ATO`       | Air temperature observation               |
-| `IPO`       | Ice phenomena observation                 |
-| `PD`        | Precipitation daily                       |
-| `WTDA`      | Water temperature daily average           |
-| `ATDA`      | Air temperature daily average             |
-| `RCSA`      | River cross section area                  |
-| `MD`        | Maximum depth                             |
+| Metric Code | Description                               | Usage                                                                    |
+| ----------- | ----------------------------------------- | ------------------------------------------------------------------------ |
+| `WLD`       | Water level daily                         | Most common, 8AM or 8PM water level values from KN-15 telegram           |
+| `WLDA`      | Water level daily average                 | Average daily water level value, calculated from the 8AM and 8PM values  |
+| `WLDC`      | Water level decadal                       | Water level value from KN-15 subgroup 966                                |
+| `WLDCA`     | Water level decade average                | Decadal average water level value for a period                           |
+| `WDD`       | Water discharge daily                     | Discharge value, can be an estimation based on the rating curve and water level or a measured discharge point from KN-15 telegram subgroup 966 | 
+| `WDDA`      | Water discharge daily average             | Daily average discharge value calculated from the daily average water level and the rating curve |
+| `WDFA`      | Water discharge fiveday average           | Pentadal average discharge value                                         |
+| `WDDCA`     | Water discharge decade average            | Decadal average discharge value                                          |
+| `WTO`       | Water temperature observation             | Daily water temperature from section 4 of subgroup 1 of a KN-15 telegram |
+| `ATO`       | Air temperature observation               | Daily air temperature from section 4 of subgroup 1 of a KN-15 telegram   |
+| `IPO`       | Ice phenomena observation                 | Complex value containing a intensity and a value code describing the phenomena |
+| `PD`        | Precipitation daily                       | Complex value containing the precipitation value and a value code describing the duration of the event |
+| `WTDA`      | Water temperature daily average           | Average daily water temperature                                          |
+| `ATDA`      | Air temperature daily average             | Average daily air temperature                                            |
+| `RCSA`      | River cross section area                  | From the subgroup 966 of the KN-15 telegram                              |
 
 For meteorological measurements:
 
-| Metric Code | Description                     |
-| ----------- | ------------------------------- |
-| `ATDCA`     | Air temperature decade average  |
-| `PDCA`      | Precipitation decade average    |
-| `ATMA`      | Air temperature monthly average |
-| `PMA`       | Precipitation monthly average   |
+| Metric Code | Description                     | Usage                                                                              |
+| ----------- | --------------------------------| ---------------------------------------------------------------------------------- |
+| `ATDCA`     | Air temperature decade average  | Either from a manual entry or KN-15 telegram subgroup 988                          |
+| `PDCA`      | Precipitation decade average    | Either from a manual entry or KN-15 telegram subgroup 988                          |
+| `ATMA`      | Air temperature monthly average | Either from a manual entry or KN-15 telegram subgroup 988                          |
+| `PMA`       | Precipitation monthly average   | Either from a manual entry or KN-15 telegram subgroup 988                          |
 
 The value code can be:
 
-| Value Code | Description           |
-| ---------- | --------------------- |
-| `M`        | Manual measurement    |
-| `A`        | Automatic measurement |
-| `E`        | Estimated value       |
-| `I`        | Imported value        |
-| `U`        | Unknown source        |
+| Value Code | Description                                        |
+| ---------- | -------------------------------------------------  |
+| `M`        | Manual measurement                                 |
+| `A`        | Automatic measurement                              |
+| `E`        | Estimated value                                    |
+| `I`        | Imported value                                     |
+| `U`        | Unknown source                                     |
+| `O`        | Override value manually entered by the hydrologist |
