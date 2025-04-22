@@ -560,21 +560,21 @@ from ieasyhydro_sdk.filters import GetHFDataValuesFilters
 ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
 # Example 1: Get data values for multiple sites and variables
-filters = GetHFDataValuesFilters(
-    site_codes=["16159", "16100", "16200"],  # Multiple stations
-    variable_names=["WLD", "WDD", "WLDA"],   # Multiple variables
-    local_date_time__gte="2024-03-01",
-    local_date_time__lt="2024-04-01"
-)
+filters = {
+    "site_codes": ["16159", "16100", "16200"],  # Multiple stations
+    "variable_names": ["WLD", "WDD", "WLDA"],   # Multiple variables
+    "local_date_time__gte": "2024-03-01T00:00:00Z",
+    "local_date_time__lt": "2024-04-02T00:00:00Z"
+}
 
 response_data = ieasyhydro_hf_sdk.get_data_values_for_site(filters=filters)
 
 # Example 2: Get temperature and precipitation measurements
-meteo_filters = GetHFDataValuesFilters(
-    site_codes=["16159", "16160"],
-    variable_names=["ATDCA", "PDCA"],  # Air temperature and precipitation decade averages
-    local_date_time__gte="2024-03-01"
-)
+meteo_filters = {
+    "site_codes": ["16159", "16160"],
+    "variable_names": ["ATDCA", "PDCA"],  # Air temperature and precipitation decade averages
+    "local_date_time__gte": "2024-03-01T00:00:00Z"
+}
 
 meteo_data = ieasyhydro_hf_sdk.get_data_values_for_site(filters=meteo_filters)
 ```
@@ -592,25 +592,25 @@ The SDK handles various error scenarios:
 
 ```python
 # Example 3: Missing timestamp filter
-filters_without_timestamp = GetHFDataValuesFilters(
-    site_codes=["16159"],
-    variable_names=["WLD"]
-)
+filters_without_timestamp = {
+    "site_codes": ["16159"],
+    "variable_name": ["WLD"]
+}
 # This will raise an error: "At least one timestamp filter must be present"
 
 # Example 4: Missing variable names
-filters_without_variables = GetHFDataValuesFilters(
-    site_codes=["16159"],
-    local_date_time__gte="2024-03-01"
-)
+filters_without_variables = {
+    "site_codes": ["16159"],
+    "local_date_time__gte": "2024-03-01T00:00:00Z"
+}
 # This will raise an error: "You must specify at least one metric name"
 
 # Example 5: Invalid variable names
-filters_with_invalid_variables = GetHFDataValuesFilters(
-    site_codes=["16159"],
-    variable_names=["INVALID_CODE"],
-    local_date_time__gte="2024-03-01"
-)
+filters_with_invalid_variables = {
+    "site_codes": ["16159"],
+    "variable_names": ["INVALID_CODE"],
+    "local_date_time__gte": "2024-03-01T00:00:00Z"
+}
 # This will raise an error: "Invalid metric names: ['INVALID_CODE']"
 
 # Example 6: API error response
@@ -662,11 +662,11 @@ The HF SDK returns data in a paginated structure:
 
 # Example 8: Response with non-existent station
 # If a station code doesn't exist, it won't appear in the results
-filters = GetHFDataValuesFilters(
-    site_codes=["16159", "99999"],  # 99999 doesn't exist
-    variable_names=["WLD"],
-    local_date_time__gte="2024-03-01"
-)
+filters = {
+    "site_codes": ["16159", "99999"],  # 99999 doesn't exist
+    "variable_names": ["WLD"],
+    "local_date_time__gte": "2024-03-01T00:00:00Z"
+}
 # Response will only include data for station 16159, 99999 will be omitted
 
 # Example 9: Response with station that has no data
