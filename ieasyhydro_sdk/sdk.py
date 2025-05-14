@@ -153,7 +153,7 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
 
     def map_site_data(self, all_resources):
         response_data = []
-        for resource in all_resources:
+        for index, resource in enumerate(all_resources):
             resource_site = resource['site'] if 'site' in resource else None
             site_type = self._resolve_station_type(resource.get('station_type'))
 
@@ -183,8 +183,11 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
                 'dangerous_discharge': resource.get('discharge_level_alarm'),
                 'historical_discharge_minimum': resource.get('historical_discharge_minimum'),
                 'historical_discharge_maximum': resource.get('historical_discharge_maximum'),
-                'enabled_forecasts': self._resolve_forecast_status(resource)
+                'enabled_forecasts': self._resolve_forecast_status(resource),
             })
+
+            if site_type == 'virtual':
+                response_data[index]['associations'] = resource.get('associations')
 
         return response_data
 
