@@ -177,7 +177,23 @@ the SDK will return.
             'official_name': 'ИССЫК-КУЛЬСКАЯ ОБЛАСТЬ'
         },
         'site_code': '15054',
-        'site_type': 'manual'
+        'site_type': 'manual',
+        'associations': [
+            {
+                "name": "Ак-Терек - с.Ак-Терек",
+                "id": 123,
+                "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                "weight": 0.6,
+                "station_code": "15055"
+            },
+            {
+                "name": "Кара-Суу - с.Кара-Суу", 
+                "id": 124,
+                "uuid": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                "weight": 0.4,
+                "station_code": "15056"
+            }
+        ],
     },
     {
         'basin': {
@@ -207,7 +223,8 @@ the SDK will return.
             'official_name': 'БАТКЕНСКАЯ ОБЛАСТЬ'
         },
         'site_code': '16158',
-        'site_type': 'manual'
+        'site_type': 'manual',
+        'associations': []
     }
 ]
 
