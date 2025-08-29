@@ -322,7 +322,7 @@ iEasyHydroHF only works with the current norm values, instead of calculating it 
 which also means the "cutoff" logic described above isn't relevant here.
 For iEasyHydroHF, you can specify:
 
-- The norm type (`discharge`, `precipitation`, or `temperature`)
+- The norm type (`discharge`, `water_level`, `precipitation`, or `temperature`)
 - The norm period:
   - `d` for daily (default)
   - `p` for pentad (5-day)
@@ -336,10 +336,13 @@ from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
 
 ieasyhydro_hf_sdk = IEasyHydroHFSDK()
 
-# Get decadal norm (default)
-decadal_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
+# Get decadal discharge norm (default)
+decadal_discharge_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge")
 
-# Get monthly norm
+# Get decadal water level norm (default)
+decadal_water_level_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "water_level")
+
+# Get monthly discharge norm
 monthly_norm = ieasyhydro_hf_sdk.get_norm_for_site("15194", "discharge", norm_period="m")
 
 # Get pentad norms for automatic station

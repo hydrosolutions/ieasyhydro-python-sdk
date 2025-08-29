@@ -136,7 +136,12 @@ class IEasyHydroHFSDKEndpointsBase(IEasyHydroHFSDKBase):
 
     def _call_get_discharge_norm_for_site(self, site_code, norm_type="d", station_type="M"):
         return self._call_get_norm_for_site(
-            site_code, 'hydro', {"norm_type": norm_type}, station_type
+            site_code, 'hydro', {"norm_type": norm_type, "metric": "discharge"}, station_type
+        )
+
+    def _call_get_water_level_norm_for_site(self, site_code, norm_type="d", station_type="M"):
+        return self._call_get_norm_for_site(
+            site_code, 'hydro', {"norm_type": norm_type, "metric": "water_level"}, station_type
         )
 
     def _call_get_meteo_norm_for_site(self, site_code, norm_type="d", norm_metric="p", station_type="M"):

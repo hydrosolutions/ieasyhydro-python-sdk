@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ieasyhydro_sdk",
-    version="0.3.1",
+    version="0.3.2",
     packages=find_packages(),
     author="Domagoj Levanić",
     author_email="domagoj.levanic@encode.hr",
