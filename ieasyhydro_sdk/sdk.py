@@ -218,7 +218,7 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
         
         Args:
             site_code: Station code
-            norm_type: Type of norm ('discharge', 'precipitation', or 'temperature')
+            norm_type: Type of norm ('discharge', 'water_level', 'precipitation', or 'temperature')
             norm_period: Period for norm data ('d' for daily, default)
             automatic: If True, get norms for automatic stations, if False for manual (default False)
         """
@@ -227,12 +227,14 @@ class IEasyHydroHFSDK(IEasyHydroHFSDKEndpointsBase):
         match norm_type:
             case 'discharge':
                 norm_response = self._call_get_discharge_norm_for_site(site_code, norm_period, station_type)
+            case 'water_level':
+                norm_response = self._call_get_water_level_norm_for_site(site_code, norm_period, station_type)
             case 'precipitation':
                 norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 'p', station_type)
             case 'temperature':
                 norm_response = self._call_get_meteo_norm_for_site(site_code, norm_period, 't', station_type)
             case _:
-                raise ValueError(f"Can only retrieve discharge, precipitation or temperature norms, got {norm_type}")
+                raise ValueError(f"Can only retrieve discharge, water level, precipitation or temperature norms, got {norm_type}")
 
         if norm_response.status_code == 200:
             return self._ensure_norm_data_has_correct_length(
