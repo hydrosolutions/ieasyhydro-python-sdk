@@ -734,6 +734,11 @@ Available filters for the HF SDK include:
 | `page`                 | `int`       | Page number for pagination                  |
 | `page_size`            | `int`       | Number of items per page                    |
 
+ATTENTION: local_date_time shouldn't include the local timezone but rather act is if it's in UTC zone so to get 8AM local metrics, use filter
+local_date_time = datetime.datetime(2025, 9, 25, 8, 0, tzinfo=datetime.timezone.utc).isoformat()
+To get evening 8PM metrics:
+local_date_time = datetime.datetime(2025, 9, 25, 20, 0, tzinfo=datetime.timezone.utc).isoformat()
+
 #### Available Metric Names
 
 For hydrological measurements:
