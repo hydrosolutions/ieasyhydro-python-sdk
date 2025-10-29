@@ -26,6 +26,7 @@ We strongly recommend to create a dedicated "machine" user for API usage.
 
 ### Initialization
 
+Two options: 
 ```python
 from ieasyhydro_sdk.sdk import IEasyHydroHFSDK
 
